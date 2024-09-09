@@ -1,75 +1,155 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import Answer from "./components/sections/Answer";
-import NameForm from "./components/sections/NameForm";
+import useWebSocket from "react-use-websocket";
 import { useEffect, useState } from "react";
+import { Button } from "./components/ui/button";
+import axios from "axios";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+// Definir el tipo de usuario
+type User = {
+  id: number;
+  name: string;
+  answers: string[];
+};
+
+const WS_URL = "ws://localhost:3000/ws";
 
 function App() {
-  const [users, setUsers] = useState([
-    { name: "John Doe", answer: "Opción A", loading: true },
-    { name: "Jane Smith", answer: "Opción B", loading: true },
-    { name: "Bob Johnson", answer: "Opción A", loading: true },
-    { name: "Alice Brown", answer: "Opción A", loading: true },
-    { name: "Mike Davis", answer: "Opción B", loading: true },
-    { name: "Emily Chen", answer: "Opción A", loading: true },
-    { name: "David Lee", answer: "Opción B", loading: true },
-  ]);
+  const [round, setRound] = useState(0);
+  const [users, setUsers] = useState<User[]>();
+  const [isRoundInProgress, setIsRoundInProgress] = useState(false);
 
-  useEffect(() => {
-    users.forEach((user, index) => {
-      setTimeout(() => {
-        setUsers((prevUsers) => {
-          const newUsers = [...prevUsers];
-          newUsers[index] = { ...user, loading: false };
-          return newUsers;
-        });
-      }, 2000 * (index + 1));
-    });
-  }, [users]);
+  // Conectar a los websockets
+  useWebSocket(WS_URL, {
+    onOpen: () => {
+      console.log("Connection opened");
+      getRound();
+      getUsers();
+      getRoundStatus();
+    },
+    onMessage: (event) => {
+      const { type } = JSON.parse(event.data);
+      if (type !== "on-user-count-changed" && type !== "on-round-count-changed")
+        return;
+      getRound();
+      getUsers();
+      getRoundStatus();
+    },
+    shouldReconnect: (closeEvent) => true,
+  });
+
+  // Obtener ronda actual
+  async function getRound() {
+    const response = await fetch("http://localhost:3000/api/round").then(
+      (res) => {
+        return res.json();
+      }
+    );
+
+    setRound(response);
+  }
+
+  // Obtener usuarios
+  const getUsers = async () => {
+    const response = await axios.get("http://localhost:3000/api/users");
+
+    setUsers(response.data);
+  };
+
+  // Pasar a la siguiente ronda
+  // TODO: prevenir que se pase a la siguiente ronda si no se ha terminado la actual
+  async function plusOne() {
+    await axios.post("http://localhost:3000/api/round", { round: round + 1 });
+  }
+
+  // TODO: is this necessary?
+  const getRoundStatus = async () => {
+    const status = await axios.get("http://localhost:3000/api/round/status");
+    setIsRoundInProgress(status.data);
+  };
+
+  // Comenzar la ronda
+  const handleStartRound = async () => {
+    const status = await axios.post("http://localhost:3000/api/round/status");
+    setIsRoundInProgress(status.data);
+  };
 
   return (
-    <>
-      <NameForm />
-      <div className="flex flex-col justify-between min-h-screen">
-        {/* Respuestas de otros usuarios */}
-        <div className="my-2">
-          <h2 className="text-xl text-center">Respuestas de otros usuarios:</h2>
-          <div className="bg-neutral-200 py-1">
-            {users.map((user, index) => {
-              setTimeout(() => {}, 2000);
-              return (
-                <Answer
-                  key={index + user.name}
-                  name={user.name}
-                  answer={user.answer}
-                  loading={user.loading}
-                />
-              );
-            })}
-          </div>
-        </div>
+    <main className="p-4 min-h-screen bg-neutral-100">
+      {/* Ronda */}
+      <Card className="text-center m-2 max-w-[350px]">
+        <CardHeader>
+          <CardTitle>Ronda actual</CardTitle>
+        </CardHeader>
+        <CardContent className="text-4xl text-center my-2">
+          {round + 1}
+        </CardContent>
+        <CardFooter className="flex justify-around">
+          {/* Botón para comenzar la ronda */}
+          <Button onClick={handleStartRound}>Comenzar ronda</Button>
+          {/* Botón para pasar a la siguiente ronda */}
+          <Button onClick={plusOne}>Siguiente ronda</Button>
+        </CardFooter>
+      </Card>
 
-        <div className="text-center">
-          {/* Respuesta de un usuario */}
-          <h1 className="text-2xl font-bold">¿Lorem ipsum dolor ate?</h1>
-          <div className="my-4">
-            <Button className="mx-2">Opción A</Button>
-            <Button className="mx-2">Opción B</Button>
-          </div>
-        </div>
+      {/* Timepo de la ronda actual */}
+      {/* <Card className="text-center m-2 max-w-[350px]">
+        <CardHeader>
+          <CardTitle>Temporizador de la ronda acutal</CardTitle>
+        </CardHeader>
+        <CardContent className="text-4xl text-center my-2">
+          {isRoundInProgress ? timeLeft : "Esperando a que empiece la ronda"}
+        </CardContent>
+      </Card> */}
 
-        <div className="flex justify-around items-center mt-8 py-4 bg-neutral-200">
-          <div className="flex items-center">
-            <Avatar>
-              <AvatarImage src="" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <span className="ml-2">John Doe</span>
-          </div>
-          <span className="text-2xl">01:00</span>
-        </div>
-      </div>
-    </>
+      {/* Usuarios */}
+      <Card className="m-2 max-w-[500px]">
+        <CardHeader>
+          <CardTitle>Usuarios</CardTitle>
+          <CardDescription>
+            Usuarios conectados: {users ? users.length : 0}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableCaption>Lista de los usuarios.</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Respuestas</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users?.map((user) => {
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.answers.join(", ")}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </main>
   );
 }
 
