@@ -33,6 +33,8 @@ function App() {
   const [round, setRound] = useState(0);
   const [users, setUsers] = useState<User[]>();
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [shouldStartRound, setShouldStartRound] = useState(false);
 
   // Conectar a los websockets
   useWebSocket(WS_URL, {
@@ -72,22 +74,69 @@ function App() {
   };
 
   // Pasar a la siguiente ronda
-  // TODO: prevenir que se pase a la siguiente ronda si no se ha terminado la actual
   async function plusOne() {
     await axios.post("http://localhost:3000/api/round", { round: round + 1 });
   }
 
-  // TODO: is this necessary?
   const getRoundStatus = async () => {
     const status = await axios.get("http://localhost:3000/api/round/status");
     setIsRoundInProgress(status.data);
   };
 
   // Comenzar la ronda
-  const handleStartRound = async () => {
-    const status = await axios.post("http://localhost:3000/api/round/status");
-    setIsRoundInProgress(status.data);
+  const startRound = async () => {
+    setTimeLeft(10);
+    setShouldStartRound(true);
   };
+
+  const endRound = async () => {
+    axios.post("http://localhost:3000/api/round/end");
+  };
+
+  useEffect(() => {
+    if (shouldStartRound) {
+      const startRound = async () => {
+        const status = await axios.post(
+          "http://localhost:3000/api/round/start"
+        );
+        setIsRoundInProgress(status.data);
+        setShouldStartRound(false);
+      };
+      startRound();
+    }
+  }, [shouldStartRound]);
+
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (timeLeft > 1) {
+  //       setTimeLeft((prev) => {
+  //         if (prev === 0) {
+  //           setIsRoundInProgress(false);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     } else if (isRoundInProgress) {
+  //       setIsRoundInProgress(false);
+  //       endRound();
+  //     }
+  //   }, 1000);
+
+  //   return () => clearInterval(interval);
+  // }, [isRoundInProgress]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (timeLeft > 1) {
+        setTimeLeft((prev) => prev - 1);
+      } else if (timeLeft === 1 && isRoundInProgress) {
+        setIsRoundInProgress(false);
+        endRound();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeLeft]);
 
   return (
     <main className="p-4 min-h-screen bg-neutral-100">
@@ -101,21 +150,25 @@ function App() {
         </CardContent>
         <CardFooter className="flex justify-around">
           {/* Botón para comenzar la ronda */}
-          <Button onClick={handleStartRound}>Comenzar ronda</Button>
+          <Button onClick={startRound} disabled={isRoundInProgress}>
+            Comenzar ronda
+          </Button>
           {/* Botón para pasar a la siguiente ronda */}
-          <Button onClick={plusOne}>Siguiente ronda</Button>
+          <Button onClick={plusOne} disabled={isRoundInProgress}>
+            Siguiente ronda
+          </Button>
         </CardFooter>
       </Card>
 
       {/* Timepo de la ronda actual */}
-      {/* <Card className="text-center m-2 max-w-[350px]">
+      <Card className="text-center m-2 max-w-[350px]">
         <CardHeader>
           <CardTitle>Temporizador de la ronda acutal</CardTitle>
         </CardHeader>
         <CardContent className="text-4xl text-center my-2">
           {isRoundInProgress ? timeLeft : "Esperando a que empiece la ronda"}
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Usuarios */}
       <Card className="m-2 max-w-[500px]">
