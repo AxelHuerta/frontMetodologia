@@ -19,6 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
+import { Car } from "lucide-react";
+import { Switch } from "./components/ui/switch";
 
 // Definir el tipo de usuario
 type User = {
@@ -35,6 +46,16 @@ function App() {
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [shouldStartRound, setShouldStartRound] = useState(false);
+  const [answers, setAnswers] = useState<string[]>([
+    "Dulce",
+    "Dulce",
+    "Dulce",
+    "Dulce",
+    "Dulce",
+    "Dulce",
+    "Dulce",
+    "Dulce",
+  ]);
 
   // Conectar a los websockets
   useWebSocket(WS_URL, {
@@ -89,8 +110,23 @@ function App() {
     setShouldStartRound(true);
   };
 
+  // Terminar la ronda
   const endRound = async () => {
     axios.post("http://localhost:3000/api/round/end");
+  };
+
+  // Guardar las respuestas
+  const handleSelectChange = (value: string, index: number) => {
+    const auxArray = answers;
+    auxArray[index] = value;
+    setAnswers(auxArray);
+  };
+
+  // Enviar las respuestas
+  const sendAnswers = async () => {
+    await axios.post("http://localhost:3000/api/answers", {
+      answerBank: answers,
+    });
   };
 
   useEffect(() => {
@@ -106,25 +142,6 @@ function App() {
     }
   }, [shouldStartRound]);
 
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (timeLeft > 1) {
-  //       setTimeLeft((prev) => {
-  //         if (prev === 0) {
-  //           setIsRoundInProgress(false);
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     } else if (isRoundInProgress) {
-  //       setIsRoundInProgress(false);
-  //       endRound();
-  //     }
-  //   }, 1000);
-
-  //   return () => clearInterval(interval);
-  // }, [isRoundInProgress]);
-
   useEffect(() => {
     const interval = setInterval(() => {
       if (timeLeft > 1) {
@@ -139,69 +156,169 @@ function App() {
   }, [timeLeft]);
 
   return (
-    <main className="p-4 min-h-screen bg-neutral-100">
-      {/* Ronda */}
-      <Card className="text-center m-2 max-w-[350px]">
-        <CardHeader>
-          <CardTitle>Ronda actual</CardTitle>
-        </CardHeader>
-        <CardContent className="text-4xl text-center my-2">
-          {round + 1}
-        </CardContent>
-        <CardFooter className="flex justify-around">
-          {/* Botón para comenzar la ronda */}
-          <Button onClick={startRound} disabled={isRoundInProgress}>
-            Comenzar ronda
-          </Button>
-          {/* Botón para pasar a la siguiente ronda */}
-          <Button onClick={plusOne} disabled={isRoundInProgress}>
-            Siguiente ronda
-          </Button>
-        </CardFooter>
-      </Card>
+    <main className="p-8 min-h-screen bg-neutral-100 flex justify-center items-center">
+      <div>
+        <section className="grid grid-cols-1 gap-4 max-w-[1500px] md:grid-cols-2 lg:grid-cols-3">
+          {/* Configuración del quiz */}
+          <Card className="text-center w-full flex flex-col justify-between">
+            <CardHeader>
+              <CardTitle>Configuración</CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-4 justify-center text-center my-2 flex-col md:flex-row">
+              <div>
+                {/* Cantidad de usuarios */}
+                <h4 className="text-lg">Cantidad de usuarios</h4>
+                <div className="flex gap-4 justify-center">
+                  <Card className="w-20 h-20 flex justify-center items-center text-4xl font-bold cursor-pointer">
+                    4
+                  </Card>
+                  <Card className="w-20 h-20 flex justify-center items-center text-4xl font-bold border-2 border-black cursor-pointer">
+                    8
+                  </Card>
+                </div>
+              </div>
+              {/* Opción de respuestas*/}
+              <div className="max-w-[200px] flex items-center mx-auto md:flex-col">
+                <h4 className="text-lg">¿Mostrar respuestas verdaderas?</h4>
+                <div className="flex justify-center">
+                  <Switch className="w-10 mt-4" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Timepo de la ronda actual */}
-      <Card className="text-center m-2 max-w-[350px]">
-        <CardHeader>
-          <CardTitle>Temporizador de la ronda acutal</CardTitle>
-        </CardHeader>
-        <CardContent className="text-4xl text-center my-2">
-          {isRoundInProgress ? timeLeft : "Esperando a que empiece la ronda"}
-        </CardContent>
-      </Card>
+          {/* Ronda */}
+          {/* TODO: limite de rondas */}
+          <Card className="text-center w-full flex flex-col justify-between">
+            <CardHeader>
+              <CardTitle>Ronda actual</CardTitle>
+            </CardHeader>
+            <CardContent className="text-6xl font-bold text-center my-2">
+              {round + 1}
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              {/* Botón para comenzar la ronda */}
+              <Button
+                onClick={startRound}
+                disabled={isRoundInProgress}
+                className="m-1"
+              >
+                Comenzar ronda
+              </Button>
+              {/* Botón para pasar a la siguiente ronda */}
+              <Button
+                onClick={plusOne}
+                disabled={isRoundInProgress}
+                className="m-1"
+              >
+                Siguiente ronda
+              </Button>
+            </CardFooter>
+          </Card>
 
-      {/* Usuarios */}
-      <Card className="m-2 max-w-[500px]">
-        <CardHeader>
-          <CardTitle>Usuarios</CardTitle>
-          <CardDescription>
-            Usuarios conectados: {users ? users.length : 0}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableCaption>Lista de los usuarios.</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Respuestas</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users?.map((user) => {
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.answers.join(", ")}</TableCell>
+          {/* Timepo de la ronda actual */}
+          <Card className="text-center w-full md:col-span-2 lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Temporizador de la ronda acutal</CardTitle>
+            </CardHeader>
+            <CardContent
+              className={`my-2 max-w-[400px] mx-auto ${
+                isRoundInProgress ? "text-6xl font-bold" : "text-4xl"
+              }`}
+            >
+              {isRoundInProgress
+                ? timeLeft
+                : "Esperando a que empiece la ronda"}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-4 mt-4 md:grid-cols-2 max-w-[1500px]">
+          {/* Usuarios */}
+          <Card className="w-full">
+            <CardHeader className="text-center">
+              <CardTitle>Usuarios</CardTitle>
+              <CardDescription>
+                Usuarios conectados: {users ? users.length : 0}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableCaption>Lista de los usuarios.</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    {Array.from({ length: 8 }).map((_, index) => (
+                      <TableHead key={index + length}>{index + 1}</TableHead>
+                    ))}
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((user) => {
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.id}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        {user.answers.map((answer, index) => {
+                          return (
+                            <TableCell key={index + answer}>{answer}</TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Banco de respuestas */}
+          <Card className="text-center w-full">
+            <CardHeader>
+              <CardTitle>Banco de respuestas</CardTitle>
+              <CardDescription>
+                Las respuestas por defecto son <i>Dulce</i>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="max-w-[500px] mx-auto">
+              <ul>
+                {answers.map((answer, index) => {
+                  return (
+                    <li
+                      key={index + answer}
+                      className="flex justify-between my-1"
+                    >
+                      <span>Usuario {index + 1}: </span>
+                      <Select
+                        name={`usuario-[index]`}
+                        defaultValue="Dulce"
+                        onValueChange={(value) => {
+                          handleSelectChange(value, index);
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Selecciona una respuesta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Sabor</SelectLabel>
+                            <SelectItem value="Dulce">Dulce</SelectItem>
+                            <SelectItem value="Picante">Picante</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardContent>
+            <CardFooter className="w-full flex justify-end">
+              <Button onClick={sendAnswers}>Guardar respuestas</Button>
+            </CardFooter>
+          </Card>
+        </section>
+      </div>
     </main>
   );
 }
