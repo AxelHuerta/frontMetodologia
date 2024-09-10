@@ -254,7 +254,7 @@ function App() {
           </Card>
         </section>
 
-        <section className="grid gap-4 mt-4 md:grid-cols-2 max-w-[1500px]">
+        <section className="grid gap-4 mt-4 grid-cols-1 max-w-[1500px]">
           {/* Usuarios */}
           <Card className="w-full">
             <CardHeader className="text-center">
@@ -270,7 +270,7 @@ function App() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Nombre</TableHead>
-                    {Array.from({ length: 8 }).map((_, index) => (
+                    {Array.from({ length: 12 }).map((_, index) => (
                       <TableHead key={index + length}>{index + 1}</TableHead>
                     ))}
                   </TableRow>
