@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { Car } from "lucide-react";
 import { Switch } from "./components/ui/switch";
 
 // Definir el tipo de usuario
@@ -46,6 +45,7 @@ function App() {
   const [isRoundInProgress, setIsRoundInProgress] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [shouldStartRound, setShouldStartRound] = useState(false);
+  const [answerBankStatus, setAnswerBankStatus] = useState(true);
   const [answers, setAnswers] = useState<string[]>([
     "Dulce",
     "Dulce",
@@ -64,6 +64,8 @@ function App() {
       getRound();
       getUsers();
       getRoundStatus();
+      // TODO: is this necessary?
+      getAnswersBankStatus();
     },
     onMessage: (event) => {
       const { type } = JSON.parse(event.data);
@@ -72,6 +74,7 @@ function App() {
       getRound();
       getUsers();
       getRoundStatus();
+      getAnswersBankStatus();
     },
     shouldReconnect: (closeEvent) => true,
   });
@@ -106,7 +109,7 @@ function App() {
 
   // Comenzar la ronda
   const startRound = async () => {
-    setTimeLeft(10);
+    setTimeLeft(60);
     setShouldStartRound(true);
   };
 
@@ -127,6 +130,20 @@ function App() {
     await axios.post("http://localhost:3000/api/answers", {
       answerBank: answers,
     });
+  };
+
+  // Obtener el estado del banco de respuestas
+  const getAnswersBankStatus = async () => {
+    const status = await axios.get("http://localhost:3000/api/answers/status");
+    setAnswerBankStatus(status.data);
+  };
+
+  const setAnswerBankStatusToServer = async () => {
+    await axios.post("http://localhost:3000/api/answers/status", {
+      status: !answerBankStatus,
+    });
+
+    setAnswerBankStatus(!answerBankStatus);
   };
 
   useEffect(() => {
@@ -181,7 +198,11 @@ function App() {
               <div className="max-w-[200px] flex items-center mx-auto md:flex-col">
                 <h4 className="text-lg">¿Mostrar respuestas verdaderas?</h4>
                 <div className="flex justify-center">
-                  <Switch className="w-10 mt-4" />
+                  <Switch
+                    className="w-10 mt-4"
+                    checked={!answerBankStatus}
+                    onClick={setAnswerBankStatusToServer}
+                  />
                 </div>
               </div>
             </CardContent>
