@@ -38,6 +38,8 @@ type User = {
 };
 
 const WS_URL = "ws://localhost:3000/ws";
+const btnLimitOfUsersStyles =
+  "w-20 h-20 flex justify-center items-center text-4xl font-bold cursor-pointer";
 
 function App() {
   const [round, setRound] = useState(0);
@@ -46,6 +48,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [shouldStartRound, setShouldStartRound] = useState(false);
   const [answerBankStatus, setAnswerBankStatus] = useState(true);
+  const [limitOfUsers, setLimitOfUsers] = useState(8);
   const [answers, setAnswers] = useState<string[]>([
     "Dulce",
     "Dulce",
@@ -64,8 +67,8 @@ function App() {
       getRound();
       getUsers();
       getRoundStatus();
-      // TODO: is this necessary?
       getAnswersBankStatus();
+      getLimitOfUsers();
     },
     onMessage: (event) => {
       const { type } = JSON.parse(event.data);
@@ -75,8 +78,10 @@ function App() {
       getUsers();
       getRoundStatus();
       getAnswersBankStatus();
+      setLimitOfUsers(limitOfUsers);
+      getLimitOfUsers();
     },
-    shouldReconnect: (closeEvent) => true,
+    shouldReconnect: () => true,
   });
 
   // Obtener ronda actual
@@ -138,12 +143,30 @@ function App() {
     setAnswerBankStatus(status.data);
   };
 
+  // Cambiar el estado del banco de respuestas
   const setAnswerBankStatusToServer = async () => {
     await axios.post("http://localhost:3000/api/answers/status", {
       status: !answerBankStatus,
     });
 
     setAnswerBankStatus(!answerBankStatus);
+  };
+
+  // Obtener el límite de usuarios
+  const getLimitOfUsers = async () => {
+    const response = await axios.get(
+      "http://localhost:3000/api/limit-of-users"
+    );
+
+    setLimitOfUsers(response.data);
+  };
+
+  const setLimitOfUsersToServer = async (limit: number) => {
+    await axios.post("http://localhost:3000/api/limit-of-users", {
+      limit: limit,
+    });
+
+    setLimitOfUsers(limit);
   };
 
   useEffect(() => {
@@ -186,10 +209,28 @@ function App() {
                 {/* Cantidad de usuarios */}
                 <h4 className="text-lg">Cantidad de usuarios</h4>
                 <div className="flex gap-4 justify-center">
-                  <Card className="w-20 h-20 flex justify-center items-center text-4xl font-bold cursor-pointer">
+                  <Card
+                    className={
+                      btnLimitOfUsersStyles +
+                      (limitOfUsers === 4 ? "border-2 border-black " : "")
+                    }
+                    onClick={() => {
+                      setLimitOfUsersToServer(4);
+                      setLimitOfUsers(4);
+                    }}
+                  >
                     4
                   </Card>
-                  <Card className="w-20 h-20 flex justify-center items-center text-4xl font-bold border-2 border-black cursor-pointer">
+                  <Card
+                    className={
+                      btnLimitOfUsersStyles +
+                      (limitOfUsers === 8 ? "border-2 border-black " : "")
+                    }
+                    onClick={() => {
+                      setLimitOfUsersToServer(8);
+                      setLimitOfUsers(8);
+                    }}
+                  >
                     8
                   </Card>
                 </div>
