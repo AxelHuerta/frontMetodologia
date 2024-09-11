@@ -72,7 +72,11 @@ function App() {
     },
     onMessage: (event) => {
       const { type } = JSON.parse(event.data);
-      if (type !== "on-user-count-changed" && type !== "on-round-count-changed")
+      if (
+        type !== "on-user-count-changed" &&
+        type !== "on-round-count-changed" &&
+        type !== "on-limit-count-changed"
+      )
         return;
       getRound();
       getUsers();
@@ -154,15 +158,13 @@ function App() {
 
   // Obtener el límite de usuarios
   const getLimitOfUsers = async () => {
-    const response = await axios.get(
-      "http://localhost:3000/api/limit-of-users"
-    );
+    const response = await axios.get("http://localhost:3000/api/users/limit");
 
     setLimitOfUsers(response.data);
   };
 
   const setLimitOfUsersToServer = async (limit: number) => {
-    await axios.post("http://localhost:3000/api/limit-of-users", {
+    await axios.post("http://localhost:3000/api/users/limit", {
       limit: limit,
     });
 
