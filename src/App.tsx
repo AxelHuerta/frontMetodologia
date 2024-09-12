@@ -40,6 +40,7 @@ type User = {
 const WS_URL = "ws://localhost:3000/ws";
 const btnLimitOfUsersStyles =
   "w-20 h-20 flex justify-center items-center text-4xl font-bold cursor-pointer";
+const ROUND_TIME = 60;
 
 function App() {
   const [round, setRound] = useState(0);
@@ -49,6 +50,7 @@ function App() {
   const [shouldStartRound, setShouldStartRound] = useState(false);
   const [answerBankStatus, setAnswerBankStatus] = useState(true);
   const [limitOfUsers, setLimitOfUsers] = useState(8);
+  const [isFinalRound, setIsFinalRound] = useState(false);
   const [answers, setAnswers] = useState<string[]>([
     "Dulce",
     "Dulce",
@@ -72,23 +74,24 @@ function App() {
     },
     onMessage: (event) => {
       const { type } = JSON.parse(event.data);
-      if (
-        type !== "on-user-count-changed" &&
-        type !== "on-round-count-changed" &&
-        type !== "on-limit-count-changed"
-      )
+      if (type !== "on-user-count-changed" && type !== "on-round-count-changed")
         return;
       getRound();
       getUsers();
       getRoundStatus();
       getAnswersBankStatus();
-      setLimitOfUsers(limitOfUsers);
       getLimitOfUsers();
     },
     shouldReconnect: () => true,
   });
 
-  // Obtener ronda actual
+  /**
+   * Obtiene la ronda actual desde la API y actualiza el estado.
+   *
+   * @async
+   * @function getRound
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la ronda actual se ha obtenido y el estado se ha actualizado.
+   */
   async function getRound() {
     const response = await fetch("http://localhost:3000/api/round").then(
       (res) => {
@@ -97,57 +100,118 @@ function App() {
     );
 
     setRound(response);
+
+    if (response >= 11) {
+      setIsFinalRound(true);
+    } else {
+      setIsFinalRound(false);
+    }
   }
 
-  // Obtener usuarios
+  /**
+   * Obtiene la lista de usuarios desde la API y actualiza el estado.
+   *
+   * @async
+   * @function getUsers
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la lista de usuarios se ha obtenido y el estado se ha actualizado.
+   */
   const getUsers = async () => {
     const response = await axios.get("http://localhost:3000/api/users");
-
     setUsers(response.data);
   };
 
-  // Pasar a la siguiente ronda
-  async function plusOne() {
-    await axios.post("http://localhost:3000/api/round", { round: round + 1 });
+  /**
+   * Envía el valor de la ronda al servidor.
+   *
+   * @async
+   * @function setRoundToServer
+   * @param {number} value - El valor de la ronda a enviar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
+  async function setRoundToServer(value: number) {
+    await axios.post("http://localhost:3000/api/round", { round: value });
   }
 
+  /**
+   * Obtiene el estado actual de la ronda desde el servidor y actualiza el estado.
+   *
+   * @async
+   * @function getRoundStatus
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el estado de la ronda se ha obtenido y el estado se ha actualizado.
+   */
   const getRoundStatus = async () => {
     const status = await axios.get("http://localhost:3000/api/round/status");
     setIsRoundInProgress(status.data);
   };
 
-  // Comenzar la ronda
+  /**
+   * Inicia una nueva ronda, estableciendo el tiempo restante y marcando que la ronda debe comenzar.
+   *
+   * @async
+   * @function startRound
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la ronda ha comenzado.
+   */
   const startRound = async () => {
-    setTimeLeft(60);
+    setTimeLeft(ROUND_TIME);
     setShouldStartRound(true);
   };
 
-  // Terminar la ronda
+  /**
+   * Termina la ronda actual enviando una solicitud al servidor.
+   *
+   * @async
+   * @function endRound
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
   const endRound = async () => {
     axios.post("http://localhost:3000/api/round/end");
   };
 
-  // Guardar las respuestas
+  /**
+   * Maneja el cambio de selección de respuestas, actualizando el estado con la nueva respuesta seleccionada.
+   *
+   * @function handleSelectChange
+   * @param {string} value - El valor de la respuesta seleccionada.
+   * @param {number} index - El índice de la respuesta en el array.
+   */
   const handleSelectChange = (value: string, index: number) => {
     const auxArray = answers;
     auxArray[index] = value;
     setAnswers(auxArray);
   };
 
-  // Enviar las respuestas
+  /**
+   * Envía las respuestas al servidor.
+   *
+   * @async
+   * @function sendAnswers
+   * @returns {Promise<void>} Una promesa que se resuelve cuando las respuestas se han enviado.
+   */
   const sendAnswers = async () => {
     await axios.post("http://localhost:3000/api/answers", {
       answerBank: answers,
     });
   };
 
-  // Obtener el estado del banco de respuestas
+  /**
+   * Obtiene el estado del banco de respuestas desde el servidor y actualiza el estado.
+   *
+   * @async
+   * @function getAnswersBankStatus
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el estado del banco de respuestas se ha obtenido y el estado se ha actualizado.
+   */
   const getAnswersBankStatus = async () => {
     const status = await axios.get("http://localhost:3000/api/answers/status");
     setAnswerBankStatus(status.data);
   };
 
-  // Cambiar el estado del banco de respuestas
+  /**
+   * Envía el estado del banco de respuestas al servidor y actualiza el estado local.
+   *
+   * @async
+   * @function setAnswerBankStatusToServer
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
   const setAnswerBankStatusToServer = async () => {
     await axios.post("http://localhost:3000/api/answers/status", {
       status: !answerBankStatus,
@@ -156,19 +220,54 @@ function App() {
     setAnswerBankStatus(!answerBankStatus);
   };
 
-  // Obtener el límite de usuarios
+  /**
+   * Obtiene el límite de usuarios desde el servidor y actualiza el estado.
+   *
+   * @async
+   * @function getLimitOfUsers
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el límite de usuarios se ha obtenido y el estado se ha actualizado.
+   */
   const getLimitOfUsers = async () => {
     const response = await axios.get("http://localhost:3000/api/users/limit");
-
     setLimitOfUsers(response.data);
   };
 
+  /**
+   * Envía el nuevo límite de usuarios al servidor y actualiza el estado local.
+   *
+   * @async
+   * @function setLimitOfUsersToServer
+   * @param {number} limit - El nuevo límite de usuarios.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
   const setLimitOfUsersToServer = async (limit: number) => {
     await axios.post("http://localhost:3000/api/users/limit", {
       limit: limit,
     });
 
     setLimitOfUsers(limit);
+  };
+
+  /**
+   * Guarda los usuarios en la base de datos.
+   *
+   * @async
+   * @function saveUsers
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
+  const saveUsers = async () => {
+    await axios.post("http://localhost:3000/api/users/save");
+  };
+
+  /**
+   * Limpia el array de usuarios en el servidor.
+   *
+   * @async
+   * @function cleanUsers
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
+   */
+  const cleanUsers = async () => {
+    await axios.post("http://localhost:3000/api/users/clean-users-array");
   };
 
   useEffect(() => {
@@ -252,7 +351,6 @@ function App() {
           </Card>
 
           {/* Ronda */}
-          {/* TODO: limite de rondas */}
           <Card className="text-center w-full flex flex-col justify-between">
             <CardHeader>
               <CardTitle>Ronda actual</CardTitle>
@@ -261,7 +359,7 @@ function App() {
               {round + 1}
             </CardContent>
             <CardFooter className="flex justify-center">
-              {/* Botón para comenzar la ronda */}
+              {/* Btn para comenzar la ronda */}
               <Button
                 onClick={startRound}
                 disabled={isRoundInProgress}
@@ -269,14 +367,33 @@ function App() {
               >
                 Comenzar ronda
               </Button>
-              {/* Botón para pasar a la siguiente ronda */}
-              <Button
-                onClick={plusOne}
-                disabled={isRoundInProgress}
-                className="m-1"
-              >
-                Siguiente ronda
-              </Button>
+
+              {/* Btn para pasar a la siguiente ronda */}
+              {!isFinalRound && (
+                <Button
+                  onClick={() => {
+                    setRoundToServer(round + 1);
+                  }}
+                  disabled={isRoundInProgress}
+                  className="m-1"
+                >
+                  Siguiente ronda
+                </Button>
+              )}
+
+              {/* TODO: feedback */}
+              {/* Btn para reiniciar el conteo y guardar los datos en la DB */}
+              {isFinalRound && (
+                <Button
+                  onClick={() => {
+                    saveUsers();
+                    cleanUsers();
+                    setRoundToServer(0);
+                  }}
+                >
+                  Reiniciar conteo
+                </Button>
+              )}
             </CardFooter>
           </Card>
 
@@ -307,6 +424,7 @@ function App() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Tabla de usuarios */}
               <Table>
                 <TableCaption>Lista de los usuarios.</TableCaption>
                 <TableHeader>
@@ -334,6 +452,12 @@ function App() {
                   })}
                 </TableBody>
               </Table>
+              {/* Botón para guardar los usuarios */}
+              {users && users.length > 0 && (
+                <div className="text-right my-4">
+                  <Button onClick={saveUsers}>Guardar usuarios</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
