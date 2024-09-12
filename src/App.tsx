@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { Switch } from "./components/ui/switch";
+import { Check } from "lucide-react";
 
 // Definir el tipo de usuario
 type User = {
@@ -51,6 +52,7 @@ function App() {
   const [answerBankStatus, setAnswerBankStatus] = useState(true);
   const [limitOfUsers, setLimitOfUsers] = useState(8);
   const [isFinalRound, setIsFinalRound] = useState(false);
+  const [isUsersSaved, setIsUsersSaved] = useState(false);
   const [answers, setAnswers] = useState<string[]>([
     "Dulce",
     "Dulce",
@@ -257,6 +259,11 @@ function App() {
    */
   const saveUsers = async () => {
     await axios.post("http://localhost:3000/api/users/save");
+
+    setIsUsersSaved(true);
+    setTimeout(() => {
+      setIsUsersSaved(false);
+    }, 4000);
   };
 
   /**
@@ -455,7 +462,15 @@ function App() {
               {/* Botón para guardar los usuarios */}
               {users && users.length > 0 && (
                 <div className="text-right my-4">
-                  <Button onClick={saveUsers}>Guardar usuarios</Button>
+                  <Button onClick={saveUsers} disabled={isUsersSaved}>
+                    {isUsersSaved ? (
+                      <>
+                        Guardado <Check className="pl-2" />
+                      </>
+                    ) : (
+                      "Guardar datos"
+                    )}
+                  </Button>
                 </div>
               )}
             </CardContent>
