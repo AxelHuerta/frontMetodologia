@@ -38,7 +38,8 @@ type User = {
   answers: string[];
 };
 
-const WS_URL = "ws://localhost:3000/ws";
+// const WS_URL = "ws://localhost:3000/ws";
+const WS_URL = "https://ws-api-metodologia.onrender.com";
 const btnLimitOfUsersStyles =
   "w-20 h-20 flex justify-center items-center text-4xl font-bold cursor-pointer";
 const ROUND_TIME = 60;
