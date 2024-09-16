@@ -96,11 +96,9 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la ronda actual se ha obtenido y el estado se ha actualizado.
    */
   async function getRound() {
-    const response = await fetch("http://localhost:3000/api/round").then(
-      (res) => {
-        return res.json();
-      }
-    );
+    const response = await fetch(`${WS_URL}/api/round`).then((res) => {
+      return res.json();
+    });
 
     setRound(response);
 
@@ -119,7 +117,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la lista de usuarios se ha obtenido y el estado se ha actualizado.
    */
   const getUsers = async () => {
-    const response = await axios.get("http://localhost:3000/api/users");
+    const response = await axios.get(`${WS_URL}/api/users`);
     setUsers(response.data);
   };
 
@@ -132,7 +130,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   async function setRoundToServer(value: number) {
-    await axios.post("http://localhost:3000/api/round", { round: value });
+    await axios.post(`${WS_URL}/api/round`, { round: value });
   }
 
   /**
@@ -143,7 +141,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando el estado de la ronda se ha obtenido y el estado se ha actualizado.
    */
   const getRoundStatus = async () => {
-    const status = await axios.get("http://localhost:3000/api/round/status");
+    const status = await axios.get(`${WS_URL}/api/round/status`);
     setIsRoundInProgress(status.data);
   };
 
@@ -167,7 +165,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   const endRound = async () => {
-    axios.post("http://localhost:3000/api/round/end");
+    axios.post(`${WS_URL}/api/round/end`);
   };
 
   /**
@@ -191,7 +189,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando las respuestas se han enviado.
    */
   const sendAnswers = async () => {
-    await axios.post("http://localhost:3000/api/answers", {
+    await axios.post(`${WS_URL}/api/answers`, {
       answerBank: answers,
     });
   };
@@ -204,7 +202,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando el estado del banco de respuestas se ha obtenido y el estado se ha actualizado.
    */
   const getAnswersBankStatus = async () => {
-    const status = await axios.get("http://localhost:3000/api/answers/status");
+    const status = await axios.get(`${WS_URL}/api/answers/status`);
     setAnswerBankStatus(status.data);
   };
 
@@ -216,7 +214,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   const setAnswerBankStatusToServer = async () => {
-    await axios.post("http://localhost:3000/api/answers/status", {
+    await axios.post(`${WS_URL}/api/answers/status`, {
       status: !answerBankStatus,
     });
 
@@ -231,7 +229,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando el límite de usuarios se ha obtenido y el estado se ha actualizado.
    */
   const getLimitOfUsers = async () => {
-    const response = await axios.get("http://localhost:3000/api/users/limit");
+    const response = await axios.get(`${WS_URL}/api/users/limit`);
     setLimitOfUsers(response.data);
   };
 
@@ -244,7 +242,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   const setLimitOfUsersToServer = async (limit: number) => {
-    await axios.post("http://localhost:3000/api/users/limit", {
+    await axios.post(`${WS_URL}/api/users/limit`, {
       limit: limit,
     });
 
@@ -259,7 +257,7 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   const saveUsers = async () => {
-    await axios.post("http://localhost:3000/api/users/save");
+    await axios.post(`${WS_URL}/api/users/save`);
 
     setIsUsersSaved(true);
     setTimeout(() => {
@@ -275,15 +273,13 @@ function App() {
    * @returns {Promise<void>} Una promesa que se resuelve cuando la solicitud se completa.
    */
   const cleanUsers = async () => {
-    await axios.post("http://localhost:3000/api/users/clean-users-array");
+    await axios.post(`${WS_URL}/api/users/clean-users-array`);
   };
 
   useEffect(() => {
     if (shouldStartRound) {
       const startRound = async () => {
-        const status = await axios.post(
-          "http://localhost:3000/api/round/start"
-        );
+        const status = await axios.post(`${WS_URL}/api/round/start`);
         setIsRoundInProgress(status.data);
         setShouldStartRound(false);
       };
