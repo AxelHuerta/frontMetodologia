@@ -492,7 +492,7 @@ function App() {
                       <span>Usuario {index + 1}: </span>
                       <Select
                         name={`usuario-[index]`}
-                        defaultValue="Dulce"
+                        defaultValue={answer}
                         onValueChange={(value) => {
                           handleSelectChange(value, index);
                         }}
