@@ -375,42 +375,52 @@ function App() {
             <CardContent className="text-6xl font-bold text-center my-2">
               {round + 1}
             </CardContent>
-            <CardFooter className="flex justify-center">
+            <CardFooter className="flex flex-col justify-center">
+              <div className="flex justify-between gap-2 w-full">
+                <Button
+                  onClick={() => {
+                    setRoundToServer(round - 1);
+                  }}
+                  disabled={isRoundInProgress || round === 0}
+                  className="w-full"
+                >
+                  Ronda anterior
+                </Button>
+                {/* Btn para pasar a la siguiente ronda */}
+                {!isFinalRound && (
+                  <Button
+                    onClick={() => {
+                      setRoundToServer(round + 1);
+                    }}
+                    disabled={isRoundInProgress}
+                    className="w-full"
+                  >
+                    Siguiente ronda
+                  </Button>
+                )}
+
+                {/* Btn para reiniciar el conteo y guardar los datos en la DB */}
+                {isFinalRound && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      saveUsers();
+                      cleanUsers();
+                      setRoundToServer(0);
+                    }}
+                  >
+                    Reiniciar conteo
+                  </Button>
+                )}
+              </div>
               {/* Btn para comenzar la ronda */}
               <Button
                 onClick={startRound}
                 disabled={isRoundInProgress}
-                className="m-1"
+                className="m-1 w-full"
               >
                 Comenzar ronda
               </Button>
-
-              {/* Btn para pasar a la siguiente ronda */}
-              {!isFinalRound && (
-                <Button
-                  onClick={() => {
-                    setRoundToServer(round + 1);
-                  }}
-                  disabled={isRoundInProgress}
-                  className="m-1"
-                >
-                  Siguiente ronda
-                </Button>
-              )}
-
-              {/* TODO: feedback */}
-              {/* Btn para reiniciar el conteo y guardar los datos en la DB */}
-              {isFinalRound && (
-                <Button
-                  onClick={() => {
-                    saveUsers();
-                    cleanUsers();
-                    setRoundToServer(0);
-                  }}
-                >
-                  Reiniciar conteo
-                </Button>
-              )}
             </CardFooter>
           </Card>
 
